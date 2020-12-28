@@ -25,24 +25,17 @@ def labels_dictionary(filename):
 def make_dataset(labels_dict, hostnames_list):
     labels=[]
     labeled_dataset=[]
-    spam=[]
-    nonspam=[]
-    j=0
     for i in range(len(hostnames_list)):
         label=labels_dict.get(hostnames_list[i])
         if label==0:
             labeled_dataset.append(i)
-            nonspam.append(j)
             labels.append(0)
-            j+=1
         elif label==1:
             labeled_dataset.append(i)
-            spam.append(j)
             labels.append(1)
-            j+=1
         else:
             labels.append(2)
-    return np.array(labels),labeled_dataset,nonspam,spam
+    return np.array(labels),np.array(labeled_dataset)
 
 def read_graph(filename):
     outlinks=[]
@@ -175,3 +168,10 @@ def classifier(s_s_size,S,spam_lower=True):
         elif s_s_size[i]<S and not spam_lower:
             response[i]=0
     return response
+def top_n_percent(n,rank,labeled_dataset):
+    indices_top = (-rank).argsort()[:(n*len(rank))//100]
+    labeled_top=[]
+    for i in range(len(labeled_dataset)):
+        if labeled_dataset[i] in indices_top:
+            labeled_top.append(i)
+    return np.array(labeled_top)
