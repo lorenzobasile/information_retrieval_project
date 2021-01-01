@@ -2,6 +2,9 @@ import numpy as np
 from scipy import sparse
 from sklearn.preprocessing import normalize
 
+'''
+hostnames_lists reads the file containing the names of hosts is read and a list containing the names is returned.
+'''
 
 def hostnames_list(filename):
     hostnames=[]
@@ -10,6 +13,11 @@ def hostnames_list(filename):
             line=line.split()
             hostnames.append(line[1])
     return hostnames
+
+'''
+labels_dictionary reads the file containing labels for some of the hosts and returns a dictionary whose keys are hostnames 
+and values their corresponding label, encoded as 0 for normal (nonspam) hosts and 1 for spam.
+'''
 
 def labels_dictionary(filename):
     labels={}
@@ -21,6 +29,11 @@ def labels_dictionary(filename):
             elif line[3]=='spam':
                 labels[line[0]]=1
     return labels
+
+'''
+make_dataset takes as input a list of hostnames and a dictionary matching hostnames to labels. The return values are 
+an array containing the labels of the labeled dataset and an array containing the indexes of the labeled samples.
+'''
 
 def make_dataset(labels_dict, hostnames_list):
     labels=[]
@@ -36,6 +49,12 @@ def make_dataset(labels_dict, hostnames_list):
         else:
             labels.append(2)
     return np.array(labels),np.array(labeled_dataset)
+
+'''
+read_graph is used to read the web graph provided with the dataset. The returned value is a scipy csr sparse matrix.
+i,j-th element is equal to the number of outlinks from node i to node j divided by the total number of outlinks of host i.
+The returned matrix has to be row-stochastic so if a node has no outlinks it is linked to an artificial node provided with a self-loop.
+'''
 
 def read_graph(filename,size):
     outlinks=[]
@@ -58,10 +77,21 @@ def read_graph(filename,size):
     mat=normalize(mat, norm='l1',axis=1)
     return mat.tocsr()
 
+'''
+PR_iteration takes a PageRank array old_pr, a stochastic matrix R, a size n and a teleporting constant alpha and performs one step
+of the PageRank iterative computation, returning the new PageRank array.
+'''
+
 def PR_iteration(old_pr,R,n,alpha):
     P=(1-alpha)*R.T #allocations reduced and scipy code is used
     new_pr=alpha/n*np.ones(n)+P.dot(old_pr)#normalization choice: 1 (probability distribution)
     return new_pr
+
+'''
+compute_PR performs the PageRank computation. The input parameters are alpha (the teleporting constant), epsilon (the precision of the
+iterative computation) and R (the transition matrix).
+The return value is x, which is initialized at random and then iteratively updated through PR_iteration up to a precision of epsilon.
+'''
 
 def compute_PR(alpha,epsilon,R):
     n=R.get_shape()[0]
@@ -76,6 +106,10 @@ def compute_PR(alpha,epsilon,R):
     print("PageRank computed")
     return np.squeeze(np.asarray(x))
 
+'''
+columns_list extracts the columns of the transition matrix R and returns them as a list.
+'''
+
 def columns_list(R):
     columns=[]
     n=R.get_shape()[0]
@@ -85,12 +119,20 @@ def columns_list(R):
         columns.append(R.dot(o))
     return columns
 
+'''
+pushback function (as presented in Andersen et al., 2007).
+'''
+
 def pushback(u, p, r, alpha, R):
     p[u]+=alpha*r[u]
     column=R[u]
     r+=(1-alpha)*r[u]*column
     r[u]=0
     return p,r
+
+'''
+approximate_contributions function (as presented in Andersen et al., 2007).
+'''
 
 def approximate_contributions(v, alpha, eps, pmax, R):
     n=len(R)
@@ -104,6 +146,10 @@ def approximate_contributions(v, alpha, eps, pmax, R):
         if r[u]<eps or np.linalg.norm(p, 1)>=pmax:
             break
     return p
+
+'''
+extract_features takes 
+'''
 
 def extract_features(R,delta,contributions,labeled_dataset,rank):
     supporting_set_size=np.zeros_like(labeled_dataset)
