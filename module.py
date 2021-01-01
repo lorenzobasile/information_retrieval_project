@@ -37,11 +37,10 @@ def make_dataset(labels_dict, hostnames_list):
             labels.append(2)
     return np.array(labels),np.array(labeled_dataset)
 
-def read_graph(filename):
+def read_graph(filename,size):
     outlinks=[]
     i=0
     with open(filename, 'r') as file:
-        size=11402
         mat=sparse.lil_matrix((size+1,size+1))
         for line in file:
             line=line.split()
@@ -72,11 +71,12 @@ def compute_PR(alpha,epsilon,R):
     while(err>epsilon):
         x_new=PR_iteration(x,R,n,alpha)
         err=(abs(x_new-x)).sum()
-        print(f"Error:{err}",end='\r')
-        x=x_new    
+        print("Error:%.2E"%err,end='\r')
+        x=x_new
+    print("PageRank computed")
     return np.squeeze(np.asarray(x))
 
-def column_list(R):
+def columns_list(R):
     columns=[]
     n=R.get_shape()[0]
     for i in range(n):
@@ -112,9 +112,7 @@ def extract_features(R,delta,contributions,labeled_dataset,rank):
     indegree=np.zeros_like(labeled_dataset)
     pr_indegree=np.zeros_like(labeled_dataset,dtype=np.float64)
     outdegree=np.zeros_like(labeled_dataset)
-    reciprocity=np.zeros_like(labeled_dataset,dtype=np.float64)
-    
-    
+    reciprocity=np.zeros_like(labeled_dataset,dtype=np.float64)  
     for i in range(len(labeled_dataset)):
         supporting_set=np.where(contributions[i]>delta*rank[labeled_dataset[i]])[0]
         supporting_set_size[i]=len(supporting_set)
@@ -140,34 +138,7 @@ def extract_features(R,delta,contributions,labeled_dataset,rank):
     x[:,7]=reciprocity        
     return x
 
-def get_metrics(response, labels):
-    correct=0
-    spam_labeled=0
-    spam_responses=0
-    spam_correct=0
-    for i in range(len(response)):
-        if response[i]==1:
-            spam_responses+=1
-        if labels[i]==1:
-            spam_labeled+=1
-        if response[i]==labels[i]:
-            correct+=1
-            if labels[i]==1:
-                spam_correct+=1
-    accuracy=correct/len(response)
-    precision=spam_correct/spam_responses
-    recall=spam_correct/spam_labeled
-    print(spam_responses)
-    return accuracy, precision, recall
 
-def classifier(s_s_size,S,spam_lower=True):
-    response=np.ones_like(s_s_size)
-    for i in range(len(s_s_size)):
-        if s_s_size[i]>=S and spam_lower:
-            response[i]=0
-        elif s_s_size[i]<S and not spam_lower:
-            response[i]=0
-    return response
 def top_n_percent(n,rank,labeled_dataset):
     indices_top = (-rank).argsort()[:(n*len(rank))//100]
     labeled_top=[]
