@@ -1,6 +1,10 @@
 import numpy as np
 from scipy import sparse
 from sklearn.preprocessing import normalize
+from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import accuracy_score as accuracy
+from sklearn.metrics import precision_score as precision
+from sklearn.metrics import recall_score as recall
 
 '''
 hostnames_lists reads the file containing the names of hosts is read and a list containing the names is returned.
@@ -166,16 +170,7 @@ def extract_features(R,delta,contributions,labeled_dataset,rank):
         outlinks=R[labeled_dataset[i],:].nonzero()[1]
         indegree[i]=(len(inlinks))
         outdegree[i]=(len(outlinks))
-       
-    x=np.zeros((len(labeled_dataset),6))
-    x[:,1]=supporting_set_size
-    x[:,0]=contribution_from_supporting_set
-    x[:,2]=l2_norm
-    x[:,3]=indegree
-    x[:,4]=outdegree
-    x[:,5]=rank[labeled_dataset]
-
-    return x
+    return indegree, outdegree, supporting_set_size, contribution_from_supporting_set, l2_norm
 
 
 def top_n_percent(n,rank,labeled_dataset):
@@ -185,3 +180,9 @@ def top_n_percent(n,rank,labeled_dataset):
         if labeled_dataset[i] in indices_top:
             labeled_top.append(i)
     return np.array(labeled_top)
+
+def prediction_metrics(clf,x,y,k):
+    pred=cross_val_predict(clf,x,y,cv=k)
+    print("Accuracy: ", accuracy(y,pred))
+    print("Precision on spam: ", precision(y,pred,average=None)[1])
+    print("Recall on spam: ",recall(y,pred,average=None)[1])
