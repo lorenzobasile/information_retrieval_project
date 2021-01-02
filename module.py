@@ -156,9 +156,7 @@ def extract_features(R,delta,contributions,labeled_dataset,rank):
     contribution_from_supporting_set=np.zeros_like(labeled_dataset, dtype=np.float64)
     l2_norm=np.zeros_like(labeled_dataset,dtype=np.float64)
     indegree=np.zeros_like(labeled_dataset)
-    pr_indegree=np.zeros_like(labeled_dataset,dtype=np.float64)
     outdegree=np.zeros_like(labeled_dataset)
-    reciprocity=np.zeros_like(labeled_dataset,dtype=np.float64)  
     for i in range(len(labeled_dataset)):
         supporting_set=np.where(contributions[i]>delta*rank[labeled_dataset[i]])[0]
         supporting_set_size[i]=len(supporting_set)
@@ -168,20 +166,15 @@ def extract_features(R,delta,contributions,labeled_dataset,rank):
         outlinks=R[labeled_dataset[i],:].nonzero()[1]
         indegree[i]=(len(inlinks))
         outdegree[i]=(len(outlinks))
-        reciprocity[i]=len(np.intersect1d(inlinks, outlinks))/outdegree[i]
-        if indegree[i]>0:
-            pr_indegree[i]=rank[labeled_dataset[i]]/indegree[i]
-        else:
-            pr_indegree[i]=1
-    x=np.zeros((len(labeled_dataset),8))
+       
+    x=np.zeros((len(labeled_dataset),6))
     x[:,1]=supporting_set_size
     x[:,0]=contribution_from_supporting_set
     x[:,2]=l2_norm
     x[:,3]=indegree
     x[:,4]=outdegree
     x[:,5]=rank[labeled_dataset]
-    x[:,6]=pr_indegree
-    x[:,7]=reciprocity        
+
     return x
 
 
