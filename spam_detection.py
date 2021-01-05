@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import sparse
 from sklearn.model_selection import cross_val_predict
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score as accuracy
 from sklearn.metrics import precision_score as precision
 from sklearn.metrics import recall_score as recall
@@ -182,7 +183,8 @@ def top_n_percent(n,rank,labeled_dataset):
     return np.array(labeled_top)
 
 def print_prediction_metrics(clf,x,y,k):
-    pred=cross_val_predict(clf,x,y,cv=k)
+    pred=cross_val_predict(clf,x,y,cv=StratifiedKFold(n_splits=k, shuffle=True))
     print("Accuracy: ", accuracy(y,pred))
     print("Precision on spam: ", precision(y,pred,average=None)[1])
     print("Recall on spam: ",recall(y,pred,average=None)[1])
+    return
