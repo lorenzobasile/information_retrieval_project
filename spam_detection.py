@@ -78,16 +78,15 @@ def read_graph(filename,size):
                 mat[i,-1]=1         
             i+=1
     mat[-1,-1]=1
-    return mat.tocsr()
+    return mat.tocsc().T
 
 '''
 PR_iteration takes a PageRank array old_pr, a stochastic matrix R, a size n and a teleporting constant alpha and performs one step
 of the PageRank iterative computation, returning the new PageRank array.
 '''
 
-def PR_iteration(old_pr,R,n,alpha):
-    P=(1-alpha)*R.T #allocations reduced and scipy code is used
-    new_pr=alpha/n*np.ones(n)+P.dot(old_pr)#normalization choice: 1 (probability distribution)
+def PR_iteration(old_pr,R_T,n,alpha):
+    new_pr=alpha/n*np.ones(n)+(1-alpha)*R_T.dot(old_pr)#normalization choice: 1 (probability distribution)
     return new_pr
 
 '''
@@ -96,40 +95,28 @@ iterative computation) and R (the transition matrix).
 The return value is x, which is initialized at random and then iteratively updated through PR_iteration up to a precision of epsilon.
 '''
 
-def compute_PR(alpha,epsilon,R):
-    n=R.get_shape()[0]
+def compute_PR(alpha,epsilon,R_T):
+    n=R_T.get_shape()[0]
     x=np.random.rand(n)
     x/=x.sum()
     err=np.inf
     while(err>epsilon):
-        x_new=PR_iteration(x,R,n,alpha)
+        x_new=PR_iteration(x,R_T,n,alpha)
         err=(abs(x_new-x)).sum()
         print("Error:%.2E"%err,end='\r')
         x=x_new
     print("PageRank computed")
     return np.squeeze(np.asarray(x))
 
-'''
-columns_list extracts the columns of the transition matrix R and returns them as a list.
-'''
-
-def columns_list(R):
-    columns=[]
-    n=R.get_shape()[0]
-    for i in range(n):
-        o=np.zeros(n)
-        o[i]=1
-        columns.append(R.dot(o))
-    return columns
 
 '''
 pushback function (as presented in Andersen et al., 2007).
 '''
 
-def pushback(u, p, r, alpha, R):
+def pushback(u, p, r, alpha, R_T):
     p[u]+=alpha*r[u]
-    column=R[u]
-    r+=(1-alpha)*r[u]*column
+    row=R_T[u]
+    r+=(1-alpha)*r[u]*row
     r[u]=0
     return p,r
 
@@ -137,8 +124,8 @@ def pushback(u, p, r, alpha, R):
 approximate_contributions function (as presented in Andersen et al., 2007).
 '''
 
-def approximate_contributions(v, alpha, eps, pmax, R):
-    n=len(R)
+def approximate_contributions(v, alpha, eps, pmax, R_T):
+    n=len(R_T)
     p=np.zeros(n)
     r=np.zeros(n)
     r[v]=1/n
@@ -146,7 +133,7 @@ def approximate_contributions(v, alpha, eps, pmax, R):
     norm=0
     while True:
         norm+=alpha*r[u]
-        p,r=pushback(u, p, r, alpha, R)
+        p,r=pushback(u, p, r, alpha, R_T)
         u=np.argmax(r)
         if r[u]<eps or norm>=pmax:
             break
@@ -156,7 +143,7 @@ def approximate_contributions(v, alpha, eps, pmax, R):
 extract_features takes 
 '''
 
-def extract_features(R,delta,contributions,labeled_dataset,rank):
+def extract_features(R_T,delta,contributions,labeled_dataset,rank):
     supporting_set_size=np.zeros_like(labeled_dataset)
     contribution_from_supporting_set=np.zeros_like(labeled_dataset, dtype=np.float64)
     l2_norm=np.zeros_like(labeled_dataset,dtype=np.float64)
@@ -167,8 +154,8 @@ def extract_features(R,delta,contributions,labeled_dataset,rank):
         supporting_set_size[i]=len(supporting_set)
         contribution_from_supporting_set[i]= contributions[i][supporting_set].sum()/rank[labeled_dataset[i]]
         l2_norm[i]=np.linalg.norm(contributions[i][supporting_set]/rank[labeled_dataset[i]], 2)
-        inlinks=R[:,labeled_dataset[i]].nonzero()[0]
-        outlinks=R[labeled_dataset[i],:].nonzero()[1]
+        inlinks=R_T[labeled_dataset[i],:].nonzero()[0]
+        outlinks=R_T[:,labeled_dataset[i]].nonzero()[0]
         indegree[i]=(len(inlinks))
         outdegree[i]=(len(outlinks))
     return indegree, outdegree, supporting_set_size, contribution_from_supporting_set, l2_norm
