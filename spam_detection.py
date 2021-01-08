@@ -140,7 +140,7 @@ def approximate_contributions(v, alpha, eps, pmax, R_T):
     return p
 
 '''
-extract_features takes 
+extract_features computes and returns the set of features to be used for spam/non spam classification
 '''
 
 def extract_features(R_T,delta,contributions,labeled_dataset,rank):
@@ -160,6 +160,9 @@ def extract_features(R_T,delta,contributions,labeled_dataset,rank):
         outdegree[i]=(len(outlinks))
     return indegree, outdegree, supporting_set_size, contribution_from_supporting_set, l2_norm
 
+'''
+top_n_percent returns the indices of the labeled hosts belonging to the top n% highest ranked hosts.
+'''
 
 def top_n_percent(n,rank,labeled_dataset):
     indices_top = (-rank).argsort()[:(n*len(rank))//100]
@@ -168,6 +171,11 @@ def top_n_percent(n,rank,labeled_dataset):
         if labeled_dataset[i] in indices_top:
             labeled_top.append(i)
     return np.array(labeled_top)
+
+'''
+print_prediction_metrics takes a classifier, a set of features, their corresponding labels and the number of folds to perform CV with.
+after a call to cross_val_predict of sklearn, 3 metrics are printed: accuracy, precision on spam class, recall on spam class.
+'''
 
 def print_prediction_metrics(clf,x,y,k):
     pred=cross_val_predict(clf,x,y,cv=StratifiedKFold(n_splits=k, shuffle=True))
