@@ -160,17 +160,6 @@ def extract_features(R_T,delta,contributions,labeled_dataset,rank):
         outdegree[i]=(len(outlinks))
     return indegree, outdegree, supporting_set_size, contribution_from_supporting_set, l2_norm
 
-'''
-top_n_percent returns the indices of the labeled hosts belonging to the top n% highest ranked hosts.
-'''
-
-def top_n_percent(n,rank,labeled_dataset):
-    indices_top = (-rank).argsort()[:(n*len(rank))//100]
-    labeled_top=[]
-    for i in range(len(labeled_dataset)):
-        if labeled_dataset[i] in indices_top:
-            labeled_top.append(i)
-    return np.array(labeled_top)
 
 '''
 print_prediction_metrics takes a classifier, a set of features, their corresponding labels and the number of folds to perform CV with.
