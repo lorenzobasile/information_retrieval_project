@@ -133,9 +133,12 @@ def approximate_contributions(v, alpha, eps, pmax, R_T):
     norm=0
     while True:
         norm+=alpha*r[u]
-        p,r=pushback(u, p, r, alpha, R_T)
+        p_prime,r=pushback(u, p, r, alpha, R_T)
         u=np.argmax(r)
-        if r[u]<eps or norm>=pmax:
+        if norm>=pmax:
+            break
+        p=p_prime    
+        if r[u]<=eps:
             break
     return p
 
