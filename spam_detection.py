@@ -7,16 +7,16 @@ from sklearn.metrics import precision_score as precision
 from sklearn.metrics import recall_score as recall
 
 '''
-hostnames_list: the file containing the names of hosts is read and a list containing the names is returned.
+hostnames_array: the file containing the names of hosts is read and an array containing the names is returned.
 '''
 
-def hostnames_list(filename):
+def hostnames_array(filename):
     hostnames=[]
     with open(filename, 'r') as file:
         for line in file:
             line=line.split()
             hostnames.append(line[1])
-    return hostnames
+    return np.array(hostnames)
 
 '''
 labels_dictionary reads the file containing labels for some of the hosts and returns a dictionary whose keys are hostnames 
@@ -75,7 +75,7 @@ def read_graph(filename,size):
             else:
                 mat[i, -1]=1         
             i+=1
-    mat[-1,-1]=1
+    mat[-1, -1]=1
     return mat.tocsc().T
 
 '''
