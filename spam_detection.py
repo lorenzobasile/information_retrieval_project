@@ -20,7 +20,7 @@ def hostnames_array(filename):
 
 '''
 labels_dictionary reads the file containing labels for some of the hosts and returns a dictionary whose keys are hostnames 
-and values are their corresponding labels, encoded as 0 for normal (nonspam) hosts and 1 for spam.
+and whose corresponding values are their labels, encoded as 0 for normal (nonspam) hosts and 1 for spam.
 '''
 
 def labels_dictionary(filename):
