@@ -35,7 +35,7 @@ def labels_dictionary(filename):
     return labels
 
 '''
-make_dataset takes as input a list of hostnames and a dictionary matching hostnames to labels. The return values are 
+make_dataset takes as input an array of hostnames and a dictionary matching hostnames to labels. The return values are 
 an array containing the labels of the labeled dataset and an array containing the indices of the labeled samples.
 '''
 
@@ -79,18 +79,9 @@ def read_graph(filename,size):
     return mat.tocsc().T
 
 '''
-PR_iteration takes a PageRank array old_pr, a column-stochastic matrix R_T, a size n and a teleporting constant alpha and performs one step
-of the PageRank iterative computation, returning the new PageRank array.
-'''
-
-def PR_iteration(old_pr, R_T, n, alpha):
-    new_pr=alpha/n*np.ones(n)+(1-alpha)*R_T.dot(old_pr)#normalization choice: 1 (probability distribution)
-    return new_pr
-
-'''
 compute_PR performs the PageRank computation. The input parameters are alpha (the teleporting constant), epsilon (the precision of the
 iterative computation) and R_T (transpose of the transition matrix).
-The return value is x, which is initialized at random and then iteratively updated through PR_iteration up to a precision of epsilon.
+The return value is x, which is initialized at random and then iteratively updated through PageRank iterations up to a precision of epsilon.
 '''
 
 def compute_PR(alpha, epsilon, R_T):
@@ -99,7 +90,7 @@ def compute_PR(alpha, epsilon, R_T):
     x/=x.sum()
     err=np.inf
     while(err>epsilon):
-        x_new=PR_iteration(x, R_T, n, alpha)
+        x_new=alpha/n*np.ones(n)+(1-alpha)*R_T.dot(x)
         err=(abs(x_new-x)).sum()
         print("Error:%.2E"%err, end='\r')
         x=x_new
@@ -141,7 +132,7 @@ def approximate_contributions(v, alpha, eps, pmax, R_T):
     return p
 
 '''
-extract_features computes and returns the set of features to be used for spam/non spam classification
+extract_features computes and returns the set of features to be used for spam/non spam classification.
 '''
 
 def extract_features(R_T, delta, contributions, labeled_dataset, rank):
