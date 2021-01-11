@@ -7,7 +7,7 @@ from sklearn.metrics import precision_score as precision
 from sklearn.metrics import recall_score as recall
 
 '''
-hostnames_lists reads the file containing the names of hosts is read and a list containing the names is returned.
+hostnames_list: the file containing the names of hosts is read and a list containing the names is returned.
 '''
 
 def hostnames_list(filename):
@@ -20,7 +20,7 @@ def hostnames_list(filename):
 
 '''
 labels_dictionary reads the file containing labels for some of the hosts and returns a dictionary whose keys are hostnames 
-and values their corresponding label, encoded as 0 for normal (nonspam) hosts and 1 for spam.
+and values are their corresponding labels, encoded as 0 for normal (nonspam) hosts and 1 for spam.
 '''
 
 def labels_dictionary(filename):
@@ -36,7 +36,7 @@ def labels_dictionary(filename):
 
 '''
 make_dataset takes as input a list of hostnames and a dictionary matching hostnames to labels. The return values are 
-an array containing the labels of the labeled dataset and an array containing the indexes of the labeled samples.
+an array containing the labels of the labeled dataset and an array containing the indices of the labeled samples.
 '''
 
 def make_dataset(labels_dict, hostnames_list):
@@ -54,7 +54,7 @@ def make_dataset(labels_dict, hostnames_list):
 
 '''
 read_graph is used to read the web graph provided with the dataset. The returned value is the transpose of a scipy csc sparse matrix whose
-i,j-th element is equal 1 over the total number of outlinks of host i if there is a link from i to j, 0 otherwise.
+i,j-th element is equal to 1 over the total number of outlinks of host i if there is a link from i to j, 0 otherwise.
 The returned matrix has to be column-stochastic so if a node has no outlinks it is linked to an artificial node provided with a self-loop.
 '''
 
