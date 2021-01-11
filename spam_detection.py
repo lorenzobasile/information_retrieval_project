@@ -50,21 +50,19 @@ def make_dataset(labels_dict, hostnames_list):
         elif label==1:
             labeled_dataset.append(i)
             labels.append(1)
-        else:
-            labels.append(2)
     return np.array(labels),np.array(labeled_dataset)
 
 '''
-read_graph is used to read the web graph provided with the dataset. The returned value is a scipy csr sparse matrix.
-i,j-th element is equal to the number of outlinks from node i to node j divided by the total number of outlinks of host i.
-The returned matrix has to be row-stochastic so if a node has no outlinks it is linked to an artificial node provided with a self-loop.
+read_graph is used to read the web graph provided with the dataset. The returned value is the transpose of a scipy csc sparse matrix whose
+i,j-th element is equal 1 over the total number of outlinks of host i if there is a link from i to j, 0 otherwise.
+The returned matrix has to be column-stochastic so if a node has no outlinks it is linked to an artificial node provided with a self-loop.
 '''
 
 def read_graph(filename,size):
     outlinks=[]
     i=0
     with open(filename, 'r') as file:
-        mat=sparse.lil_matrix((size+1,size+1))
+        mat=sparse.lil_matrix((size+1, size+1))
         for line in file:
             line=line.split()
             line=line[2:]
@@ -73,37 +71,37 @@ def read_graph(filename,size):
                 for outlink in line:
                     outlink=outlink.split(':')
                     j=int(outlink[0])
-                    mat[i,j]=1/l
+                    mat[i, j]=1/l
             else:
-                mat[i,-1]=1         
+                mat[i, -1]=1         
             i+=1
     mat[-1,-1]=1
     return mat.tocsc().T
 
 '''
-PR_iteration takes a PageRank array old_pr, a stochastic matrix R, a size n and a teleporting constant alpha and performs one step
+PR_iteration takes a PageRank array old_pr, a column-stochastic matrix R_T, a size n and a teleporting constant alpha and performs one step
 of the PageRank iterative computation, returning the new PageRank array.
 '''
 
-def PR_iteration(old_pr,R_T,n,alpha):
+def PR_iteration(old_pr, R_T, n, alpha):
     new_pr=alpha/n*np.ones(n)+(1-alpha)*R_T.dot(old_pr)#normalization choice: 1 (probability distribution)
     return new_pr
 
 '''
 compute_PR performs the PageRank computation. The input parameters are alpha (the teleporting constant), epsilon (the precision of the
-iterative computation) and R (the transition matrix).
+iterative computation) and R_T (transpose of the transition matrix).
 The return value is x, which is initialized at random and then iteratively updated through PR_iteration up to a precision of epsilon.
 '''
 
-def compute_PR(alpha,epsilon,R_T):
+def compute_PR(alpha, epsilon, R_T):
     n=R_T.get_shape()[0]
     x=np.random.rand(n)
     x/=x.sum()
     err=np.inf
     while(err>epsilon):
-        x_new=PR_iteration(x,R_T,n,alpha)
+        x_new=PR_iteration(x, R_T, n, alpha)
         err=(abs(x_new-x)).sum()
-        print("Error:%.2E"%err,end='\r')
+        print("Error:%.2E"%err, end='\r')
         x=x_new
     print("PageRank computed")
     return np.squeeze(np.asarray(x))
@@ -146,22 +144,18 @@ def approximate_contributions(v, alpha, eps, pmax, R_T):
 extract_features computes and returns the set of features to be used for spam/non spam classification
 '''
 
-def extract_features(R_T,delta,contributions,labeled_dataset,rank):
+def extract_features(R_T, delta, contributions, labeled_dataset, rank):
     supporting_set_size=np.zeros_like(labeled_dataset)
     contribution_from_supporting_set=np.zeros_like(labeled_dataset, dtype=np.float64)
-    l2_norm=np.zeros_like(labeled_dataset,dtype=np.float64)
-    indegree=np.zeros_like(labeled_dataset)
-    outdegree=np.zeros_like(labeled_dataset)
+    l2_norm=np.zeros_like(labeled_dataset, dtype=np.float64)
+    indegree=np.count_nonzero(R_T, axis=1)
+    outdegree=np.count_nonzero(R_T, axis=0)
     for i in range(len(labeled_dataset)):
         supporting_set=np.where(contributions[i]>delta*rank[labeled_dataset[i]])[0]
         supporting_set_size[i]=len(supporting_set)
         contribution_from_supporting_set[i]= contributions[i][supporting_set].sum()/rank[labeled_dataset[i]]
         l2_norm[i]=np.linalg.norm(contributions[i][supporting_set]/rank[labeled_dataset[i]], 2)
-        inlinks=R_T[labeled_dataset[i],:].nonzero()[0]
-        outlinks=R_T[:,labeled_dataset[i]].nonzero()[0]
-        indegree[i]=(len(inlinks))
-        outdegree[i]=(len(outlinks))
-    return indegree, outdegree, supporting_set_size, contribution_from_supporting_set, l2_norm
+    return indegree[labeled_dataset], outdegree[labeled_dataset], supporting_set_size, contribution_from_supporting_set, l2_norm
 
 
 '''
@@ -169,9 +163,9 @@ print_prediction_metrics takes a classifier, a set of features, their correspond
 after a call to cross_val_predict of sklearn, 3 metrics are printed: accuracy, precision on spam class, recall on spam class.
 '''
 
-def print_prediction_metrics(clf,x,y,k):
-    pred=cross_val_predict(clf,x,y,cv=StratifiedKFold(n_splits=k, shuffle=True))
-    print("Accuracy: ", accuracy(y,pred))
-    print("Precision on spam: ", precision(y,pred,average=None)[1])
-    print("Recall on spam: ",recall(y,pred,average=None)[1])
+def print_prediction_metrics(clf, x, y, k):
+    pred=cross_val_predict(clf, x, y, cv=StratifiedKFold(n_splits=k, shuffle=True))
+    print("Accuracy: ", round(accuracy(y, pred), 2))
+    print("Precision on spam: ", round(precision(y, pred, average=None)[1], 3))
+    print("Recall on spam: ", round(recall(y, pred, average=None)[1], 3))
     return
